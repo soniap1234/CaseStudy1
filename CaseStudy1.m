@@ -1,7 +1,6 @@
 load COVIDbyCounty.mat
 
 %% Lab 1
-
     %% Q1: IDENTIFY MOST POPULATED COUNTY IN EACH DIVISION
 
 S = [];  %creating an empty array to add our max pop val's and corresponding names to.
@@ -168,8 +167,9 @@ c9 = randn(1, 2);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Building kmeans 
 
-choppedData = CNTY_COVID(1:180,:); % only use the first 200 columns for kmeans.
+choppedData = CNTY_COVID(1:180,:); % get first 180 rows of cnty covid for kmeans
 hiddenData = CNTY_COVID(181:225, :);
+choppedCensus = CNTY_CENSUS(1:180,:); % get the first 180 rows of cnty census for cluster indexing 
 
 figure()
 plot(choppedData')
@@ -189,9 +189,54 @@ plot(C')
 
 
 %find the distances between the centroids and each point in the cluster.
-for idx = 1:9   
-       distance = norm(choppedData(idx(i)-C(idx)))  %county1 - centroid
-       if mindistance > distance 
-          mindistance = distance
-       end 
+alldistances = zeros(180,1);
+allclosestpoint = zeros(1,9);
+minNamesTable = "";
+
+
+%% find what counties are in each cluster.
+
+%countiespercluster = zeros(9,180);
+
+t = choppedCensus.DIVISION(idx==2);
+%cluster data is in idx (like which row of census belongs to which cluster)
+% so when that CLUSTER == 2
+% store this into a variable, all the indexes where cluster==2
+cluster1data = table(idx, choppedCensus.CTYNAME)
+
+
+%doing it with a table (not ideal, abort mission)
+% for clusternumber = 1:9
+%     for i = 1:180  %ROW indexing
+%     if idx==clusternumber   %second round, if the idx value == cluster 2 
+% 
+%     countiespercluster(clusternumber) = CNTY_CENSUS(i,5)    %assign countiespercluster at row 2 each column to each 
+%     end
+%     end
+% end
+
+%find what division shows up the most 
+
+% for i = 1:9  %iterating through each row (each centroid is a row, each value in that row = the counties in that cluster
+%     a = CNTY_CENSUS(countiespercluster(i), 6);  
+% end
+%assign that division to the centroid
+
+for clusternumber = 1:9   
+    for county = 1:180
+       distance = norm(choppedData(county) - C(clusternumber)); %we're actually comparing distances from EVERY point to that one centroid but hey, the minimum is the minimum.
+       alldistances(county) = distance;   
+       [closestpoint,I]= min(alldistances); %get the minimum of all 180 county's distances AND their index. that's the closest county to the centroid (for each loop)
+       minNames = num2cell(table2array(CNTY_CENSUS(I,"CTYNAME"))); %getting the respective name data
+       minNamesTable(clusternumber) = minNames; %creating a table with the name values
+    end
+    allclosestpoint(clusternumber) = closestpoint;
 end
+minsandnames = table2array(table(allclosestpoint', minNamesTable')); 
+
+
+% allclosestpoint(county) = closestpoint
+       % distance = norm(choppedData(idx(i)-C(idx)))  %county1 - centroid
+       % if mindistance > distance 
+       %    mindistance = distance
+       % end 
